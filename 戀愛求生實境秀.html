@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>青春情感特快車：戀愛求生實境秀</title>
+    <!-- 引入字體與圖示 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Noto+Sans+TC:wght@500;700;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <style>
+        :root {
+            --slide-bg: rgba(255, 255, 255, 0.95);
+            --primary: #FF6B6B;     
+            --secondary: #4ECDC4;   
+            --accent-yellow: #FFE66D; 
+            --text-dark: #2C3E50;
+            --ng-color: #FF5252;
+            --ok-color: #2ED573;
+        }
+
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            color: var(--text-dark);
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+        }
+
+        .title-font { font-family: 'Fredoka', 'Noto Sans TC', sans-serif; }
+
+        #presentation-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .slide {
+            position: absolute;
+            width: 100%;
+            max-width: 1100px;
+            height: 85vh;
+            background-color: var(--slide-bg);
+            border-radius: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08), 0 0 0 5px rgba(255,255,255,0.5);
+            padding: 40px 50px;
+            display: flex;
+            flex-direction: column;
+            opacity: 0;
+            transform: scale(0.95) translateY(20px);
+            pointer-events: none;
+            transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            overflow-y: auto;
+            backdrop-filter: blur(10px);
+        }
+
+        .slide.active {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+            pointer-events: auto;
+            z-index: 10;
+        }
+
+        .flip-card {
+            perspective: 1000px;
+            height: 300px;
+        }
+
+        .flip-card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transform-style: preserve-3d;
+        }
+
+        .flip-card.flipped .flip-card-inner {
+            transform: rotateY(180deg);
+        }
+
+        .flip-card-front, .flip-card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .flip-card-front {
+            background: white;
+            border: 4px solid #f1f2f6;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+            cursor: pointer;
+        }
+        
+        .flip-card-front:hover {
+            border-color: var(--secondary);
+            transform: translateY(-5px);
+            transition: all 0.3s ease;
+        }
+
+        .flip-card-back {
+            background: linear-gradient(135deg, var(--secondary) 0%, #2980b9 100%);
+            color: white;
+            transform: rotateY(180deg);
+            border: 4px solid white;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.15);
+        }
+
+        .scenario-box {
+            background: #f8f9fa;
+            border-radius: 20px;
+            padding: 20px 25px;
+            margin-bottom: 25px;
+            border-left: 6px solid var(--accent-yellow);
+        }
+
+        .action-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            flex-grow: 1;
+        }
+
+        .panel {
+            background: white;
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.04);
+            border: 2px solid #f1f2f6;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel.ng { border-top: 5px solid var(--ng-color); }
+        .panel.ok { border-top: 5px solid var(--ok-color); }
+
+        .bubble {
+            position: relative;
+            background: #f1f2f6;
+            border-radius: 20px;
+            padding: 18px;
+            margin-bottom: 20px;
+            font-size: 1.15rem;
+            line-height: 1.6;
+            font-weight: 700;
+        }
+
+        .bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -12px;
+            left: 25px;
+            border-width: 12px 12px 0;
+            border-style: solid;
+            display: block;
+            width: 0;
+        }
+
+        .panel.ng .bubble { background: #ffeaa7; color: #d35400; }
+        .panel.ng .bubble::after { border-color: #ffeaa7 transparent; }
+        .panel.ok .bubble { background: #e0f7fa; color: #00838f; }
+        .panel.ok .bubble::after { border-color: #e0f7fa transparent; }
+
+        .reveal-content {
+            display: none;
+            flex-grow: 1;
+            animation: slideUpFade 0.4s forwards;
+        }
+        .reveal-content.show { display: flex; flex-direction: column; }
+
+        .btn-reveal {
+            width: 100%; padding: 15px; border-radius: 12px;
+            font-weight: 900; font-size: 1.2rem; cursor: pointer;
+            transition: all 0.2s; border: none;
+        }
+        .btn-ng { background-color: var(--ng-color); color: white; }
+        .btn-ok { background-color: var(--ok-color); color: white; }
+
+        @keyframes slideUpFade {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .inner-reveal {
+            position: relative; cursor: pointer; width: 100%; margin-top: auto;
+        }
+        .inner-reveal .front {
+            background: #f8f9fa; padding: 15px; text-align: center; border: 3px dashed #dcdde1;
+            border-radius: 15px; font-size: 1.3rem; font-weight: 900; color: #7f8fa6; transition: all 0.3s;
+        }
+        .inner-reveal .front:hover {
+            background: #fff200; color: #2f3542; border-color: #ff9f43; transform: translateY(-5px);
+            box-shadow: 0 10px 15px rgba(255, 159, 67, 0.2);
+        }
+        .inner-reveal .back { display: none; animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        .inner-reveal.revealed .front { display: none; }
+        .inner-reveal.revealed .back { display: block; }
+        
+        @keyframes popIn {
+            0% { transform: scale(0.8) translateY(20px); opacity: 0; }
+            100% { transform: scale(1) translateY(0); opacity: 1; }
+        }
+
+        .iceberg-truth {
+            font-size: 1.8rem; font-weight: 900; text-align: center;
+            color: white; background: linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%); 
+            padding: 20px; border-radius: 15px; box-shadow: 0 10px 25px rgba(108, 92, 231, 0.3);
+            border: 2px solid rgba(255,255,255,0.5);
+        }
+        
+        .i-message-bubble {
+            border: 4px solid #feca57 !important;
+            box-shadow: 0 10px 25px rgba(254, 202, 87, 0.4) !important;
+            background: #fffdf2 !important;
+            font-size: 1.85rem !important; /* 再度放大字體 */
+            line-height: 1.6 !important;
+            padding: 25px !important;
+        }
+
+        .success-ending {
+            display: none; /* 預設隱藏，點擊後才顯示 */
+            animation: popIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        .controls {
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            display: flex; gap: 10px; z-index: 50; background: white;
+            padding: 10px 20px; border-radius: 50px; box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        .dot { width: 12px; height: 12px; border-radius: 50%; background-color: #dfe4ea; cursor: pointer; }
+        .dot.active { background-color: var(--secondary); transform: scale(1.4); }
+    </style>
+</head>
+<body>
+
+<div id="presentation-container">
+    
+    <!-- 第 1 頁：命運盲選牆 -->
+    <div class="slide active" id="slide-0">
+        <div class="flex flex-col items-center h-full">
+            <div class="inline-block bg-white text-gray-800 px-6 py-2 rounded-full text-lg font-bold shadow-sm mb-4 mt-4 border border-gray-100">
+                國中生必修：青春情感特快車
+            </div>
+            <h1 class="text-5xl md:text-6xl title-font font-black text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-red-500 to-yellow-500 mb-2 drop-shadow-sm">
+                戀愛求生實境秀
+            </h1>
+            <p class="text-xl text-gray-600 mb-8 font-bold">請各小組推派代表，憑直覺點擊一張命運卡牌！</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-6 w-full max-w-6xl mt-4">
+                
+                <!-- 卡片 1 -->
+                <div class="flip-card" onclick="flipCard(this)">
+                    <div class="flip-card-inner">
+                        <div class="flip-card-front">
+                            <i class="fa-solid fa-comment-slash text-6xl text-gray-400 mb-6"></i>
+                            <span class="text-gray-700 font-black text-4xl">狀況 A</span>
+                            <p class="text-sm text-gray-400 mt-8"><i class="fa-solid fa-hand-pointer animate-pulse"></i> 點擊翻牌</p>
+                        </div>
+                        <div class="flip-card-back bg-gradient-to-br from-blue-400 to-blue-600">
+                            <i class="fa-solid fa-mobile-screen text-5xl mb-6 text-blue-100"></i>
+                            <h3 class="text-4xl font-black mb-8 text-white tracking-wide">已讀不回</h3>
+                            <button onclick="goToSlide(1); event.stopPropagation();" class="mt-auto bg-white text-blue-600 px-6 py-3 rounded-full font-black text-lg hover:scale-105 transition shadow-lg w-full">
+                                進入挑戰 <i class="fa-solid fa-play ml-1"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 卡片 2 -->
+                <div class="flip-card" onclick="flipCard(this)">
+                    <div class="flip-card-inner">
+                        <div class="flip-card-front">
+                            <i class="fa-solid fa-heart-crack text-6xl text-pink-400 mb-6"></i>
+                            <span class="text-gray-700 font-black text-4xl">狀況 B</span>
+                            <p class="text-sm text-gray-400 mt-8"><i class="fa-solid fa-hand-pointer animate-pulse"></i> 點擊翻牌</p>
+                        </div>
+                        <div class="flip-card-back bg-gradient-to-br from-pink-400 to-rose-500">
+                            <i class="fa-solid fa-face-angry text-5xl mb-6 text-pink-100"></i>
+                            <h3 class="text-4xl font-black mb-8 text-white tracking-wide">吃醋嫉妒</h3>
+                            <button onclick="goToSlide(2); event.stopPropagation();" class="mt-auto bg-white text-pink-600 px-6 py-3 rounded-full font-black text-lg hover:scale-105 transition shadow-lg w-full">
+                                進入挑戰 <i class="fa-solid fa-play ml-1"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 卡片 3 -->
+                <div class="flip-card" onclick="flipCard(this)">
+                    <div class="flip-card-inner">
+                        <div class="flip-card-front">
+                            <i class="fa-solid fa-face-laugh-squint text-6xl text-yellow-400 mb-6"></i>
+                            <span class="text-gray-700 font-black text-4xl">狀況 C</span>
+                            <p class="text-sm text-gray-400 mt-8"><i class="fa-solid fa-hand-pointer animate-pulse"></i> 點擊翻牌</p>
+                        </div>
+                        <div class="flip-card-back bg-gradient-to-br from-yellow-400 to-orange-500">
+                            <i class="fa-solid fa-mask text-5xl mb-6 text-yellow-100"></i>
+                            <h3 class="text-4xl font-black mb-8 text-white tracking-wide">面子掃地</h3>
+                            <button onclick="goToSlide(3); event.stopPropagation();" class="mt-auto bg-white text-orange-600 px-6 py-3 rounded-full font-black text-lg hover:scale-105 transition shadow-lg w-full">
+                                進入挑戰 <i class="fa-solid fa-play ml-1"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 卡片 4 -->
+                <div class="flip-card" onclick="flipCard(this)">
+                    <div class="flip-card-inner">
+                        <div class="flip-card-front">
+                            <i class="fa-solid fa-bullhorn text-6xl text-purple-400 mb-6"></i>
+                            <span class="text-gray-700 font-black text-4xl">狀況 D</span>
+                            <p class="text-sm text-gray-400 mt-8"><i class="fa-solid fa-hand-pointer animate-pulse"></i> 點擊翻牌</p>
+                        </div>
+                        <div class="flip-card-back bg-gradient-to-br from-purple-400 to-indigo-500">
+                            <i class="fa-solid fa-user-secret text-5xl mb-6 text-purple-100"></i>
+                            <h3 class="text-4xl font-black mb-8 text-white tracking-wide">秘密外洩</h3>
+                            <button onclick="goToSlide(4); event.stopPropagation();" class="mt-auto bg-white text-indigo-600 px-6 py-3 rounded-full font-black text-lg hover:scale-105 transition shadow-lg w-full">
+                                進入挑戰 <i class="fa-solid fa-play ml-1"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 卡片 5 -->
+                <div class="flip-card" onclick="flipCard(this)">
+                    <div class="flip-card-inner">
+                        <div class="flip-card-front">
+                            <i class="fa-solid fa-clock text-6xl text-teal-400 mb-6"></i>
+                            <span class="text-gray-700 font-black text-4xl">狀況 E</span>
+                            <p class="text-sm text-gray-400 mt-8"><i class="fa-solid fa-hand-pointer animate-pulse"></i> 點擊翻牌</p>
+                        </div>
+                        <div class="flip-card-back bg-gradient-to-br from-teal-400 to-emerald-500">
+                            <i class="fa-solid fa-stopwatch text-5xl mb-6 text-teal-100"></i>
+                            <h3 class="text-4xl font-black mb-8 text-white tracking-wide">遲到放鴿子</h3>
+                            <button onclick="goToSlide(5); event.stopPropagation();" class="mt-auto bg-white text-emerald-600 px-6 py-3 rounded-full font-black text-lg hover:scale-105 transition shadow-lg w-full">
+                                進入挑戰 <i class="fa-solid fa-play ml-1"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- 關卡 1：已讀不回 -->
+    <div class="slide" id="slide-1">
+        <button onclick="goToSlide(0)" class="absolute top-8 right-8 bg-gray-100 hover:bg-gray-200 text-gray-700 px-5 py-2 rounded-full font-bold transition flex items-center shadow-sm">
+            <i class="fa-solid fa-rotate-left mr-2"></i> 返回盲選牆
+        </button>
+
+        <div class="flex items-center justify-between mb-4">
+            <span class="bg-blue-100 text-blue-800 px-4 py-1.5 rounded-full text-sm font-black tracking-widest">狀況 A</span>
+        </div>
+        <h2 class="text-4xl font-bold mb-4 title-font text-gray-800">📱 氣死人的已讀不回</h2>
+        
+        <div class="scenario-box">
+            <p class="text-xl font-bold text-gray-700 leading-relaxed">
+                你傳訊息給在乎的人，他半天都沒回，但你卻看到他剛剛更新了 IG 限動跟別人出去玩...
+            </p>
+        </div>
+
+        <div class="action-container">
+            <div class="panel ng">
+                <div class="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-red-500 text-white px-6 py-1.5 rounded-full font-black text-lg shadow-md">NG 爆走</div>
+                <div class="mt-6"></div>
+                <button class="btn-reveal btn-ng h-32" onclick="toggleReveal('reveal-1-ng')">點擊查看 NG 反應</button>
+                <div id="reveal-1-ng" class="reveal-content mt-2">
+                    <div class="bubble">「有時間發限動沒時間回我？不想理我就說啊！」</div>
+                    <div class="mb-4">
+                        <span class="inline-block bg-red-100 text-red-700 text-lg md:text-xl font-bold px-4 py-2 rounded-xl mb-2 border border-red-200 shadow-sm">💥 結局：對方覺得你管太多，直接已讀到底。</span>
+                    </div>
+                    <div class="inner-reveal" onclick="this.classList.add('revealed')">
+                        <div class="front"><i class="fa-solid fa-magnifying-glass mb-2 text-2xl block text-purple-400"></i> 點擊揭曉：冰山下的真心</div>
+                        <div class="back iceberg-truth">其實是：害怕被忽略</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel ok">
+                <div class="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-6 py-1.5 rounded-full font-black text-lg shadow-md">OK 高手</div>
+                <div class="mt-6"></div>
+                <button class="btn-reveal btn-ok h-32 flex flex-col items-center justify-center gap-2" onclick="toggleReveal('reveal-1-ok')">
+                    <span>點擊使用 我訊息</span>
+                    <span class="text-sm font-normal bg-black/10 px-3 py-1 rounded-full">💡 公式：事件 ➕ 感受 ➕ 期待</span>
+                </button>
+                <div id="reveal-1-ok" class="reveal-content mt-2">
+                    <div class="inner-reveal mb-4 mt-2" onclick="revealIMessageAndEnding(this, 'success-1')">
+                        <div class="front"><i class="fa-solid fa-wand-magic-sparkles mb-2 text-2xl block text-yellow-500"></i> 點擊生成：專屬我訊息</div>
+                        <div class="back bubble i-message-bubble">
+                            「當看到你發限動卻沒回我時，<br>
+                            <span class="text-pink-500">我覺得有點難過</span>，<br>
+                            <span class="text-yellow-600">因為我希望你能回覆我。</span>」
+                        </div>
+                    </div>
+                    <div id="success-1" class="success-ending mt-auto bg-green-100 p-4 rounded-2xl border-4 border-green-400 shadow-[0_0_15px_rgba(46,213,115,0.3)]">
+                        <span class="text-green-800 font-black text-lg block mb-1"><i class="fa-solid fa-check-circle"></i> 成功結局：</span>
+                        <p class="text-green-900 text-xl font-bold leading-relaxed">對方意識到讓你受傷了，趕緊道歉並解釋原因！</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 關卡 2：吃醋嫉妒 -->
+    <div class="slide" id="slide-2">
+        <button onclick="goToSlide(0)" class="absolute top-8 right-8 bg-gray-100 hover:bg-gray-200 text-gray-700 px-5 py-2 rounded-full font-bold transition flex items-center shadow-sm">
+            <i class="fa-solid fa-rotate-left mr-2"></i> 返回盲選牆
+        </button>
+
+        <div class="flex items-center justify-between mb-4">
+            <span class="bg-pink-100 text-pink-800 px-4 py-1.5 rounded-full text-sm font-black tracking-widest">狀況 B</span>
+        </div>
+        <h2 class="text-4xl font-bold mb-4 title-font text-gray-800">😤 走心的酸葡萄</h2>
+        
+        <div class="scenario-box">
+            <p class="text-xl font-bold text-gray-700 leading-relaxed">
+                你看到在乎的人跟另一個同學玩得超級開心，甚至共喝一杯飲料，完全沒理你...
+            </p>
+        </div>
+
+        <div class="action-container">
+            <div class="panel ng">
+                <div class="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-red-500 text-white px-6 py-1.5 rounded-full font-black text-lg shadow-md">NG 爆走</div>
+                <div class="mt-6"></div>
+                <button class="btn-reveal btn-ng h-32" onclick="toggleReveal('reveal-2-ng')">點擊查看 NG 反應</button>
+                <div id="reveal-2-ng" class="reveal-content mt-2">
+                    <div class="bubble">「喔是喔～感情真好啊！那你去跟他同一組算啦，管我幹嘛？」</div>
+                    <div class="mb-4">
+                        <span class="inline-block bg-red-100 text-red-700 text-lg md:text-xl font-bold px-4 py-2 rounded-xl mb-2 border border-red-200 shadow-sm">💥 結局：對方覺得你莫名其妙，兩人互看不爽。</span>
+                    </div>
+                    <div class="inner-reveal" onclick="this.classList.add('revealed')">
+                        <div class="front"><i class="fa-solid fa-magnifying-glass mb-2 text-2xl block text-purple-400"></i> 點擊揭曉：冰山下的真心</div>
+                        <div class="back iceberg-truth">其實是：很吃醋、怕被取代</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel ok">
+                <div class="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-6 py-1.5 rounded-full font-black text-lg shadow-md">OK 高手</div>
+                <div class="mt-6"></div>
+                <button class="btn-reveal btn-ok h-32 flex flex-col items-center justify-center gap-2" onclick="toggleReveal('reveal-2-ok')">
+                    <span>點擊使用 我訊息</span>
+                    <span class="text-sm font-normal bg-black/10 px-3 py-1 rounded-full">💡 公式：事件 ➕ 感受 ➕ 期待</span>
+                </button>
+                <div id="reveal-2-ok" class="reveal-content mt-2">
+                    <div class="inner-reveal mb-4 mt-2" onclick="revealIMessageAndEnding(this, 'success-2')">
+                        <div class="front"><i class="fa-solid fa-wand-magic-sparkles mb-2 text-2xl block text-yellow-500"></i> 點擊生成：專屬我訊息</div>
+                        <div class="back bubble i-message-bubble">
+                            「看到你跟別人喝同一杯飲料時，<br>
+                            <span class="text-pink-500">我很吃醋不開心</span>，<br>
+                            <span class="text-yellow-600">因為我希望我們能有專屬的界線。</span>」
+                        </div>
+                    </div>
+                    <div id="success-2" class="success-ending mt-auto bg-green-100 p-4 rounded-2xl border-4 border-green-400 shadow-[0_0_15px_rgba(46,213,115,0.3)]">
+                        <span class="text-green-800 font-black text-lg block mb-1"><i class="fa-solid fa-check-circle"></i> 成功結局：</span>
+                        <p class="text-green-900 text-xl font-bold leading-relaxed">清楚表達在意，對方懂了底線，未來會注意距離！</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 關卡 3：面子掃地 -->
+    <div class="slide" id="slide-3">
+        <button onclick="goToSlide(0)" class="absolute top-8 right-8 bg-gray-100 hover:bg-gray-200 text-gray-700 px-5 py-2 rounded-full font-bold transition flex items-center shadow-sm">
+            <i class="fa-solid fa-rotate-left mr-2"></i> 返回盲選牆
+        </button>
+
+        <div class="flex items-center justify-between mb-4">
+            <span class="bg-yellow-100 text-yellow-800 px-4 py-1.5 rounded-full text-sm font-black tracking-widest">狀況 C</span>
+        </div>
+        <h2 class="text-4xl font-bold mb-4 title-font text-gray-800">🤡 踩到底線的玩笑</h2>
+        
+        <div class="scenario-box">
+            <p class="text-xl font-bold text-gray-700 leading-relaxed">
+                對方在一大群同學面前，拿你超糗的事情當笑話講，大家都笑了，你覺得超級丟臉...
+            </p>
+        </div>
+
+        <div class="action-container">
+            <div class="panel ng">
+                <div class="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-red-500 text-white px-6 py-1.5 rounded-full font-black text-lg shadow-md">NG 爆走</div>
+                <div class="mt-6"></div>
+                <button class="btn-reveal btn-ng h-32" onclick="toggleReveal('reveal-3-ng')">點擊查看 NG 反應</button>
+                <div id="reveal-3-ng" class="reveal-content mt-2">
+                    <div class="bubble">「你有病嗎？你以為很好笑？你長得才好笑啦！閉嘴！」</div>
+                    <div class="mb-4">
+                        <span class="inline-block bg-red-100 text-red-700 text-lg md:text-xl font-bold px-4 py-2 rounded-xl mb-2 border border-red-200 shadow-sm">💥 結局：變成互罵，還被說「開不起玩笑」。</span>
+                    </div>
+                    <div class="inner-reveal" onclick="this.classList.add('revealed')">
+                        <div class="front"><i class="fa-solid fa-magnifying-glass mb-2 text-2xl block text-purple-400"></i> 點擊揭曉：冰山下的真心</div>
+                        <div class="back iceberg-truth">其實是：覺得丟臉、自尊受傷</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel ok">
+                <div class="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-6 py-1.5 rounded-full font-black text-lg shadow-md">OK 高手</div>
+                <div class="mt-6"></div>
+                <button class="btn-reveal btn-ok h-32 flex flex-col items-center justify-center gap-2" onclick="toggleReveal('reveal-3-ok')">
+                    <span>點擊使用 我訊息</span>
+                    <span class="text-sm font-normal bg-black/10 px-3 py-1 rounded-full">💡 公式：事件 ➕ 感受 ➕ 期待</span>
+                </button>
+                <div id="reveal-3-ok" class="reveal-content mt-2">
+                    <div class="inner-reveal mb-4 mt-2" onclick="revealIMessageAndEnding(this, 'success-3')">
+                        <div class="front"><i class="fa-solid fa-wand-magic-sparkles mb-2 text-2xl block text-yellow-500"></i> 點擊生成：專屬我訊息</div>
+                        <div class="back bubble i-message-bubble">
+                            「當你在大家面前講我糗事時，<br>
+                            <span class="text-pink-500">我覺得很丟臉受傷</span>，<br>
+                            <span class="text-yellow-600">因為我希望你能幫我顧面子。</span>」
+                        </div>
+                    </div>
+                    <div id="success-3" class="success-ending mt-auto bg-green-100 p-4 rounded-2xl border-4 border-green-400 shadow-[0_0_15px_rgba(46,213,115,0.3)]">
+                        <span class="text-green-800 font-black text-lg block mb-1"><i class="fa-solid fa-check-circle"></i> 成功結局：</span>
+                        <p class="text-green-900 text-xl font-bold leading-relaxed">對方知道踩雷馬上收斂，不失控也不委屈！</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 關卡 4：信任破裂 -->
+    <div class="slide" id="slide-4">
+        <button onclick="goToSlide(0)" class="absolute top-8 right-8 bg-gray-100 hover:bg-gray-200 text-gray-700 px-5 py-2 rounded-full font-bold transition flex items-center shadow-sm">
+            <i class="fa-solid fa-rotate-left mr-2"></i> 返回盲選牆
+        </button>
+
+        <div class="flex items-center justify-between mb-4">
+            <span class="bg-purple-100 text-purple-800 px-4 py-1.5 rounded-full text-sm font-black tracking-widest">狀況 D</span>
+        </div>
+        <h2 class="text-4xl font-bold mb-4 title-font text-gray-800">🤫 藏不住的秘密</h2>
+        
+        <div class="scenario-box">
+            <p class="text-xl font-bold text-gray-700 leading-relaxed">
+                你把最重要的心事（或暗戀對象）只告訴他一個人，結果隔天全班都在討論這件事...
+            </p>
+        </div>
+
+        <div class="action-container">
+            <div class="panel ng">
+                <div class="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-red-500 text-white px-6 py-1.5 rounded-full font-black text-lg shadow-md">NG 爆走</div>
+                <div class="mt-6"></div>
+                <button class="btn-reveal btn-ng h-32" onclick="toggleReveal('reveal-4-ng')">點擊查看 NG 反應</button>
+                <div id="reveal-4-ng" class="reveal-content mt-2">
+                    <div class="bubble">「你嘴巴是破洞嗎？大聲公！我以後再也不會跟你說任何事了！」</div>
+                    <div class="mb-4">
+                        <span class="inline-block bg-red-100 text-red-700 text-lg md:text-xl font-bold px-4 py-2 rounded-xl mb-2 border border-red-200 shadow-sm">💥 結局：失去信任，兩人徹底鬧翻變仇人。</span>
+                    </div>
+                    <div class="inner-reveal" onclick="this.classList.add('revealed')">
+                        <div class="front"><i class="fa-solid fa-magnifying-glass mb-2 text-2xl block text-purple-400"></i> 點擊揭曉：冰山下的真心</div>
+                        <div class="back iceberg-truth">其實是：覺得被背叛、很受傷</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel ok">
+                <div class="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-6 py-1.5 rounded-full font-black text-lg shadow-md">OK 高手</div>
+                <div class="mt-6"></div>
+                <button class="btn-reveal btn-ok h-32 flex flex-col items-center justify-center gap-2" onclick="toggleReveal('reveal-4-ok')">
+                    <span>點擊使用 我訊息</span>
+                    <span class="text-sm font-normal bg-black/10 px-3 py-1 rounded-full">💡 公式：事件 ➕ 感受 ➕ 期待</span>
+                </button>
+                <div id="reveal-4-ok" class="reveal-content mt-2">
+                    <div class="inner-reveal mb-4 mt-2" onclick="revealIMessageAndEnding(this, 'success-4')">
+                        <div class="front"><i class="fa-solid fa-wand-magic-sparkles mb-2 text-2xl block text-yellow-500"></i> 點擊生成：專屬我訊息</div>
+                        <div class="back bubble i-message-bubble">
+                            「當聽到大家在討論我的秘密時，<br>
+                            <span class="text-pink-500">我覺得被背叛很受傷</span>，<br>
+                            <span class="text-yellow-600">因為我希望我們的秘密能被保守。</span>」
+                        </div>
+                    </div>
+                    <div id="success-4" class="success-ending mt-auto bg-green-100 p-4 rounded-2xl border-4 border-green-400 shadow-[0_0_15px_rgba(46,213,115,0.3)]">
+                        <span class="text-green-800 font-black text-lg block mb-1"><i class="fa-solid fa-check-circle"></i> 成功結局：</span>
+                        <p class="text-green-900 text-xl font-bold leading-relaxed">讓對方知道嚴重性，對方感到愧疚並保證不再犯！</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 關卡 5：浪費時間 -->
+    <div class="slide" id="slide-5">
+        <button onclick="goToSlide(0)" class="absolute top-8 right-8 bg-gray-100 hover:bg-gray-200 text-gray-700 px-5 py-2 rounded-full font-bold transition flex items-center shadow-sm">
+            <i class="fa-solid fa-rotate-left mr-2"></i> 返回盲選牆
+        </button>
+
+        <div class="flex items-center justify-between mb-4">
+            <span class="bg-teal-100 text-teal-800 px-4 py-1.5 rounded-full text-sm font-black tracking-widest">狀況 E</span>
+        </div>
+        <h2 class="text-4xl font-bold mb-4 title-font text-gray-800">⏰ 消失的約會</h2>
+        
+        <div class="scenario-box">
+            <p class="text-xl font-bold text-gray-700 leading-relaxed">
+                說好週末要一起打傳說對決，結果你等了快一個小時，對方才出現說他睡過頭...
+            </p>
+        </div>
+
+        <div class="action-container">
+            <div class="panel ng">
+                <div class="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-red-500 text-white px-6 py-1.5 rounded-full font-black text-lg shadow-md">NG 爆走</div>
+                <div class="mt-6"></div>
+                <button class="btn-reveal btn-ng h-32" onclick="toggleReveal('reveal-5-ng')">點擊查看 NG 反應</button>
+                <div id="reveal-5-ng" class="reveal-content mt-2">
+                    <div class="bubble">「別人的時間都不是時間嗎？不想約就不要約啊，浪費我的生命！」</div>
+                    <div class="mb-4">
+                        <span class="inline-block bg-red-100 text-red-700 text-lg md:text-xl font-bold px-4 py-2 rounded-xl mb-2 border border-red-200 shadow-sm">💥 結局：對方被罵後也火大，大吵一架不歡而散。</span>
+                    </div>
+                    <div class="inner-reveal" onclick="this.classList.add('revealed')">
+                        <div class="front"><i class="fa-solid fa-magnifying-glass mb-2 text-2xl block text-purple-400"></i> 點擊揭曉：冰山下的真心</div>
+                        <div class="back iceberg-truth">其實是：覺得不被重視、期待落空</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel ok">
+                <div class="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-6 py-1.5 rounded-full font-black text-lg shadow-md">OK 高手</div>
+                <div class="mt-6"></div>
+                <button class="btn-reveal btn-ok h-32 flex flex-col items-center justify-center gap-2" onclick="toggleReveal('reveal-5-ok')">
+                    <span>點擊使用 我訊息</span>
+                    <span class="text-sm font-normal bg-black/10 px-3 py-1 rounded-full">💡 公式：事件 ➕ 感受 ➕ 期待</span>
+                </button>
+                <div id="reveal-5-ok" class="reveal-content mt-2">
+                    <div class="inner-reveal mb-4 mt-2" onclick="revealIMessageAndEnding(this, 'success-5')">
+                        <div class="front"><i class="fa-solid fa-wand-magic-sparkles mb-2 text-2xl block text-yellow-500"></i> 點擊生成：專屬我訊息</div>
+                        <div class="back bubble i-message-bubble">
+                            「當我等你一小時都找不到人時，<br>
+                            <span class="text-pink-500">我覺得很焦慮也很失落</span>，<br>
+                            <span class="text-yellow-600">因為我希望我們的約定能被重視。</span>」
+                        </div>
+                    </div>
+                    <div id="success-5" class="success-ending mt-auto bg-green-100 p-4 rounded-2xl border-4 border-green-400 shadow-[0_0_15px_rgba(46,213,115,0.3)]">
+                        <span class="text-green-800 font-black text-lg block mb-1"><i class="fa-solid fa-check-circle"></i> 成功結局：</span>
+                        <p class="text-green-900 text-xl font-bold leading-relaxed">對方誠懇道歉並提出補償方案，兩人順利和好！</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 結語 -->
+    <div class="slide" id="slide-6">
+        <button onclick="goToSlide(0)" class="absolute top-8 right-8 bg-gray-100 hover:bg-gray-200 text-gray-700 px-5 py-2 rounded-full font-bold transition flex items-center shadow-sm">
+            <i class="fa-solid fa-rotate-left mr-2"></i> 返回盲選牆
+        </button>
+        <div class="flex flex-col items-center justify-center h-full text-center">
+            <div class="text-7xl mb-4 text-yellow-400">🏆</div>
+            <h2 class="text-5xl font-black title-font mb-6 text-gray-800">恭喜過關！獲得溝通寶物</h2>
+            
+            <div class="bg-white p-8 rounded-3xl w-full max-w-3xl shadow-[0_10px_40px_rgba(0,0,0,0.08)] border-2 border-gray-100">
+                <p class="text-2xl font-bold text-gray-700 mb-6">下次想爆炸罵人時，請先深呼吸 3 秒，拿出：</p>
+                
+                <div class="flex flex-col gap-4 text-left">
+                    <div class="bg-blue-50 p-5 rounded-2xl flex items-center gap-5 border border-blue-100">
+                        <div class="text-4xl bg-white w-14 h-14 rounded-full flex items-center justify-center shadow text-blue-500">👀</div>
+                        <div>
+                            <div class="text-xl font-black text-blue-700 mb-1">當我看到 / 聽到...</div>
+                            <div class="font-bold text-blue-900/60">冷靜說出事實，不要加批評</div>
+                        </div>
+                    </div>
+                    <div class="bg-pink-50 p-5 rounded-2xl flex items-center gap-5 border border-pink-100">
+                        <div class="text-4xl bg-white w-14 h-14 rounded-full flex items-center justify-center shadow text-pink-500">❤️</div>
+                        <div>
+                            <div class="text-xl font-black text-pink-600 mb-1">我覺得...</div>
+                            <div class="font-bold text-pink-900/60">誠實說出冰山底下的真心感覺</div>
+                        </div>
+                    </div>
+                    <div class="bg-yellow-50 p-5 rounded-2xl flex items-center gap-5 border border-yellow-100">
+                        <div class="text-4xl bg-white w-14 h-14 rounded-full flex items-center justify-center shadow text-yellow-500">🤲</div>
+                        <div>
+                            <div class="text-xl font-black text-yellow-700 mb-1">因為我希望...</div>
+                            <div class="font-bold text-yellow-900/60">告訴對方可以怎麼做來幫助你</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<div class="controls">
+    <div class="progress-dots" id="dotsContainer"></div>
+</div>
+
+<script>
+    let currentSlide = 0;
+    const slides = document.querySelectorAll('.slide');
+    const dotsContainer = document.getElementById('dotsContainer');
+
+    // 翻牌特效
+    function flipCard(element) {
+        element.classList.toggle('flipped');
+    }
+
+    // 初始化進度點
+    slides.forEach((_, index) => {
+        const dot = document.createElement('div');
+        dot.classList.add('dot');
+        if (index === 0) dot.classList.add('active');
+        dot.onclick = () => goToSlide(index);
+        dotsContainer.appendChild(dot);
+    });
+    
+    const dots = document.querySelectorAll('.dot');
+
+    function updateNav() {
+        dots.forEach((dot, index) => {
+            dot.classList.toggle('active', index === currentSlide);
+        });
+    }
+
+    function goToSlide(index) {
+        slides[currentSlide].classList.remove('active');
+        currentSlide = index;
+        slides[currentSlide].classList.add('active');
+        updateNav();
+    }
+
+    function toggleReveal(id) {
+        const element = document.getElementById(id);
+        const button = element.previousElementSibling;
+        if (element.classList.contains('show')) {
+            element.classList.remove('show');
+            button.style.display = 'block';
+        } else {
+            element.classList.add('show');
+            button.style.display = 'none';
+        }
+    }
+
+    function revealIMessageAndEnding(element, endingId) {
+        if (!element.classList.contains('revealed')) {
+            element.classList.add('revealed');
+            // 延遲 1 秒後顯示成功結局，製造順序感
+            setTimeout(() => {
+                const endingElement = document.getElementById(endingId);
+                if (endingElement) {
+                    endingElement.style.display = 'block';
+                }
+            }, 1000); 
+        }
+    }
+</script>
+
+</body>
+</html>

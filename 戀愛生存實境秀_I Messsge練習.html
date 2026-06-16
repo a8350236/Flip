@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>戀愛生存實境秀：互動學習闖關版</title>
+    <!-- 引入字體與圖示 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Noto+Sans+TC:wght@500;700;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <style>
+        :root {
+            --slide-bg: rgba(255, 255, 255, 0.95);
+            --primary: #FF6B6B;     
+            --secondary: #4ECDC4;   
+            --accent-yellow: #FFE66D; 
+            --text-dark: #2C3E50;
+            --ng-color: #FF5252;
+            --ok-color: #2ED573;
+        }
+
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            color: var(--text-dark);
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+        }
+
+        .title-font { font-family: 'Fredoka', 'Noto Sans TC', sans-serif; }
+
+        #presentation-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .slide {
+            position: absolute;
+            width: 100%;
+            max-width: 1200px;
+            height: 88vh;
+            background-color: var(--slide-bg);
+            border-radius: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08), 0 0 0 5px rgba(255,255,255,0.5);
+            padding: 40px 50px;
+            display: flex;
+            flex-direction: column;
+            opacity: 0;
+            transform: scale(0.95) translateY(20px);
+            pointer-events: none;
+            transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            overflow-y: auto;
+            backdrop-filter: blur(10px);
+        }
+
+        .slide.active {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+            pointer-events: auto;
+            z-index: 10;
+        }
+
+        /* 隱藏原生卷軸但可滑動 */
+        .slide::-webkit-scrollbar { width: 8px; }
+        .slide::-webkit-scrollbar-track { background: transparent; }
+        .slide::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+
+        .flip-card {
+            perspective: 1000px;
+            height: 300px;
+        }
+
+        .flip-card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transform-style: preserve-3d;
+        }
+
+        .flip-card.flipped .flip-card-inner { transform: rotateY(180deg); }
+
+        .flip-card-front, .flip-card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .flip-card-front {
+            background: white;
+            border: 4px solid #f1f2f6;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+            cursor: pointer;
+        }
+        
+        .flip-card-front:hover {
+            border-color: var(--secondary);
+            transform: translateY(-5px);
+            transition: all 0.3s ease;
+        }
+
+        .flip-card-back {
+            background: linear-gradient(135deg, var(--secondary) 0%, #2980b9 100%);
+            color: white;
+            transform: rotateY(180deg);
+            border: 4px solid white;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.15);
+        }
+
+        .scenario-box {
+            background: #f8f9fa;
+            border-radius: 20px;
+            padding: 20px 25px;
+            margin-bottom: 25px;
+            border-left: 6px solid var(--accent-yellow);
+        }
+
+        .action-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            flex-grow: 1;
+            min-height: 400px;
+        }
+
+        .panel {
+            background: white;
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.04);
+            border: 2px solid #f1f2f6;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel.ng { border-top: 5px solid var(--ng-color); }
+        .panel.ok { border-top: 5px solid var(--ok-color); }
+
+        .bubble {
+            position: relative;
+            background: #f1f2f6;
+            border-radius: 20px;
+            padding: 18px;
+            margin-bottom: 20px;
+            font-size: 1.15rem;
+            line-height: 1.6;
+            font-weight: 700;
+        }
+
+        .bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -12px;
+            left: 25px;
+            border-width: 12px 12px 0;
+            border-style: solid;
+            display: block;
+            width: 0;
+        }
+
+        .panel.ng .bubble { background: #ffeaa7; color: #d35400; }
+        .panel.ng .bubble::after { border-color: #ffeaa7 transparent; }
+
+        .reveal-content {
+            display: none;
+            flex-grow: 1;
+            animation: slideUpFade 0.4s forwards;
+        }
+        .reveal-content.show { display: flex; flex-direction: column; }
+
+        .btn-reveal {
+            width: 100%; padding: 15px; border-radius: 12px;
+            font-weight: 900; font-size: 1.2rem; cursor: pointer;
+            transition: all 0.2s; border: none;
+        }
+        .btn-ng { background-color: var(--ng-color); color: white; }
+
+        @keyframes slideUpFade {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0.8) translateY(20px); opacity: 0; }
+            100% { transform: scale(1) translateY(0); opacity: 1; }
+        }
+
+        .inner-reveal {
+            position: relative; cursor: pointer; width: 100%; margin-top: auto;
+        }
+        .inner-reveal .front {
+            background: #f8f9fa; padding: 15px; text-align: center; border: 3px dashed #dcdde1;
+            border-radius: 15px; font-size: 1.3rem; font-weight: 900; color: #7f8fa6; transition: all 0.3s;
+        }
+        .inner-reveal .front:hover {
+            background: #fff200; color: #2f3542; border-color: #ff9f43; transform: translateY(-5px);
+            box-shadow: 0 10px 15px rgba(255, 159, 67, 0.2);
+        }
+        .inner-reveal .back { display: none; animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        .inner-reveal.revealed .front { display: none; }
+        .inner-reveal.revealed .back { display: block; }
+
+        .iceberg-truth {
+            font-size: 1.5rem; font-weight: 900; text-align: center;
+            color: white; background: linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%); 
+            padding: 20px; border-radius: 15px; box-shadow: 0 10px 25px rgba(108, 92, 231, 0.3);
+            border: 2px solid rgba(255,255,255,0.5);
+        }
+        
+        .i-message-bubble {
+            border: 4px solid #feca57 !important;
+            box-shadow: 0 10px 25px rgba(254, 202, 87, 0.4) !important;
+            background: #fffdf2 !important;
+            font-size: 1.25rem !important; 
+            line-height: 1.6 !important;
+            padding: 20px !important;
+            color: #2C3E50;
+        }
+
+        .controls {
+            position: fixed; bottom: 15px; left: 50%; transform: translateX(-50%);
+            display: flex; gap: 10px; z-index: 50; background: white;
+            padding: 10px 20px; border-radius: 50px; box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        .dot { width: 12px; height: 12px; border-radius: 50%; background-color: #dfe4ea; cursor: pointer; transition: all 0.3s;}
+        .dot.active { background-color: var(--secondary); transform: scale(1.4); }
+        
+        /* 表單輸入框樣式強化 */
+        .form-input {
+            width: 100%;
+            border: 2px solid #e2e8f0;
+            border-radius: 0.75rem;
+            padding: 0.75rem 1rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #334155;
+            transition: all 0.2s;
+        }
+        .form-input:focus {
+            outline: none;
+            border-color: var(--ok-color);
+            box-shadow: 0 0 0 4px rgba(46, 213, 115, 0.2);
+        }
+        .form-input::placeholder { color: #94a3b8; font-weight: 500; }
+    </style>
+</head>
+<body>
+
+<div id="presentation-container">
+    
+    <!-- 第 0 頁：命運盲選牆 -->
+    <div class="slide active" id="slide-0">
+        <div class="flex flex-col items-center h-full">
+            <div class="inline-block bg-white text-gray-800 px-6 py-2 rounded-full text-lg font-bold shadow-sm mb-4 mt-4 border border-gray-100">
+                情感教育學習單情境演練
+            </div>
+            <h1 class="text-5xl md:text-6xl title-font font-black text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-red-500 to-yellow-500 mb-2 drop-shadow-sm text-center">
+                戀愛生存實境秀
+            </h1>
+            <p class="text-xl text-gray-600 mb-8 font-bold text-center">請各小組推派代表，憑直覺點擊一個挑戰情境！<br><span class="text-sm text-gray-400">（本關卡將考驗你的「我訊息」造句能力）</span></p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-6 w-full max-w-6xl mt-2">
+                
+                <!-- 卡片 1 (STOP 01) -->
+                <div class="flip-card" onclick="flipCard(this)">
+                    <div class="flip-card-inner">
+                        <div class="flip-card-front">
+                            <i class="fa-solid fa-clock text-6xl text-gray-400 mb-6"></i>
+                            <span class="text-gray-700 font-black text-3xl">情境 1</span>
+                            <p class="text-sm text-gray-400 mt-8"><i class="fa-solid fa-hand-pointer animate-pulse"></i> 點擊翻牌</p>
+                        </div>
+                        <div class="flip-card-back bg-gradient-to-br from-blue-400 to-blue-600">
+                            <i class="fa-solid fa-person-running text-5xl mb-6 text-blue-100"></i>
+                            <h3 class="text-2xl font-black mb-8 text-white tracking-wide leading-tight">遲到的<br>約定</h3>
+                            <button onclick="goToSlide(1); event.stopPropagation();" class="mt-auto bg-white text-blue-600 px-4 py-2 rounded-full font-black text-base hover:scale-105 transition shadow-lg w-full">
+                                進入挑戰 <i class="fa-solid fa-play ml-1"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 卡片 2 (STOP 02) -->
+                <div class="flip-card" onclick="flipCard(this)">
+                    <div class="flip-card-inner">
+                        <div class="flip-card-front">
+                            <i class="fa-solid fa-mobile-screen text-6xl text-pink-400 mb-6"></i>
+                            <span class="text-gray-700 font-black text-3xl">情境 2</span>
+                            <p class="text-sm text-gray-400 mt-8"><i class="fa-solid fa-hand-pointer animate-pulse"></i> 點擊翻牌</p>
+                        </div>
+                        <div class="flip-card-back bg-gradient-to-br from-pink-400 to-rose-500">
+                            <i class="fa-solid fa-comment-slash text-5xl mb-6 text-pink-100"></i>
+                            <h3 class="text-2xl font-black mb-8 text-white tracking-wide leading-tight">已讀不回<br>的焦慮</h3>
+                            <button onclick="goToSlide(2); event.stopPropagation();" class="mt-auto bg-white text-pink-600 px-4 py-2 rounded-full font-black text-base hover:scale-105 transition shadow-lg w-full">
+                                進入挑戰 <i class="fa-solid fa-play ml-1"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 卡片 3 (STOP 03) -->
+                <div class="flip-card" onclick="flipCard(this)">
+                    <div class="flip-card-inner">
+                        <div class="flip-card-front">
+                            <i class="fa-regular fa-calendar-xmark text-6xl text-yellow-400 mb-6"></i>
+                            <span class="text-gray-700 font-black text-3xl">情境 3</span>
+                            <p class="text-sm text-gray-400 mt-8"><i class="fa-solid fa-hand-pointer animate-pulse"></i> 點擊翻牌</p>
+                        </div>
+                        <div class="flip-card-back bg-gradient-to-br from-yellow-400 to-orange-500">
+                            <i class="fa-solid fa-face-sad-tear text-5xl mb-6 text-yellow-100"></i>
+                            <h3 class="text-2xl font-black mb-8 text-white tracking-wide leading-tight">被遺忘的<br>小紀念日</h3>
+                            <button onclick="goToSlide(3); event.stopPropagation();" class="mt-auto bg-white text-orange-600 px-4 py-2 rounded-full font-black text-base hover:scale-105 transition shadow-lg w-full">
+                                進入挑戰 <i class="fa-solid fa-play ml-1"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 卡片 4 (STOP 04) -->
+                <div class="flip-card" onclick="flipCard(this)">
+                    <div class="flip-card-inner">
+                        <div class="flip-card-front">
+                            <i class="fa-solid fa-users text-6xl text-purple-400 mb-6"></i>
+                            <span class="text-gray-700 font-black text-3xl">情境 4</span>
+                            <p class="text-sm text-gray-400 mt-8"><i class="fa-solid fa-hand-pointer animate-pulse"></i> 點擊翻牌</p>
+                        </div>
+                        <div class="flip-card-back bg-gradient-to-br from-purple-400 to-indigo-500">
+                            <i class="fa-solid fa-heart-crack text-5xl mb-6 text-purple-100"></i>
+                            <h3 class="text-2xl font-black mb-8 text-white tracking-wide leading-tight">聚會中的<br>吃醋與不安</h3>
+                            <button onclick="goToSlide(4); event.stopPropagation();" class="mt-auto bg-white text-indigo-600 px-4 py-2 rounded-full font-black text-base hover:scale-105 transition shadow-lg w-full">
+                                進入挑戰 <i class="fa-solid fa-play ml-1"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 卡片 5 (STOP 05) -->
+                <div class="flip-card" onclick="flipCard(this)">
+                    <div class="flip-card-inner">
+                        <div class="flip-card-front">
+                            <i class="fa-solid fa-hashtag text-6xl text-teal-400 mb-6"></i>
+                            <span class="text-gray-700 font-black text-3xl">情境 5</span>
+                            <p class="text-sm text-gray-400 mt-8"><i class="fa-solid fa-hand-pointer animate-pulse"></i> 點擊翻牌</p>
+                        </div>
+                        <div class="flip-card-back bg-gradient-to-br from-teal-400 to-emerald-500">
+                            <i class="fa-solid fa-globe text-5xl mb-6 text-teal-100"></i>
+                            <h3 class="text-2xl font-black mb-8 text-white tracking-wide leading-tight">交織的<br>網路線</h3>
+                            <button onclick="goToSlide(5); event.stopPropagation();" class="mt-auto bg-white text-emerald-600 px-4 py-2 rounded-full font-black text-base hover:scale-105 transition shadow-lg w-full">
+                                進入挑戰 <i class="fa-solid fa-play ml-1"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- 關卡 1：遲到的約定 -->
+    <div class="slide" id="slide-1">
+        <button onclick="goToSlide(0)" class="absolute top-6 right-6 bg-gray-100 hover:bg-gray-200 text-gray-700 px-5 py-2 rounded-full font-bold transition flex items-center shadow-sm z-20">
+            <i class="fa-solid fa-rotate-left mr-2"></i> 選擇其他情境
+        </button>
+
+        <div class="mb-2"><span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs font-black tracking-widest">STOP 01</span></div>
+        <h2 class="text-3xl font-bold mb-3 title-font text-gray-800">⏰ 遲到的約定</h2>
+        
+        <div class="scenario-box py-3 mb-4">
+            <p class="text-lg font-bold text-gray-700 leading-relaxed">
+                你們約好這個周末一起去士林夜市逛街。但對方遲到了一個小時，也沒有先傳訊息告知。
+            </p>
+        </div>
+
+        <div class="action-container">
+            <!-- NG 版 -->
+            <div class="panel ng flex-1">
+                <div class="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-red-500 text-white px-6 py-1.5 rounded-full font-black text-lg shadow-md">NG 版</div>
+                <div class="mt-4 flex-grow flex flex-col justify-center">
+                    <button class="btn-reveal btn-ng py-8" onclick="toggleReveal('reveal-1-ng')"><i class="fa-solid fa-bomb mr-2"></i> 點擊查看 NG 爆走反應</button>
+                    <div id="reveal-1-ng" class="reveal-content mt-2">
+                        <div class="bubble text-lg">「你到底在哪？遲到一小時也不說，我像白痴一樣在這邊等，不想逛就說啊！」</div>
+                        <div class="mb-4">
+                            <span class="inline-block bg-red-100 text-red-700 font-bold px-4 py-2 rounded-xl border border-red-200 shadow-sm">💥 結局：對方覺得被罵沒面子，直接吵起來約會泡湯。</span>
+                        </div>
+                        <div class="inner-reveal mt-auto" onclick="this.classList.add('revealed')">
+                            <div class="front py-6"><i class="fa-solid fa-magnifying-glass mb-2 text-2xl block text-purple-400"></i> 點擊揭曉：冰山下的真心</div>
+                            <div class="back iceberg-truth">其實是：覺得不被尊重、很擔心對方</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 達人版互動表單 -->
+            <div class="panel ok flex-1">
+                <div class="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-6 py-1.5 rounded-full font-black text-lg shadow-md">實戰演練區</div>
+                
+                <!-- 填寫區 -->
+                <div id="form-container-1" class="mt-4 flex-grow flex flex-col">
+                    <div class="bg-gray-50 p-4 rounded-2xl border border-gray-200 flex-grow flex flex-col justify-center">
+                        <p class="font-bold text-gray-600 mb-3 text-center">💡 請依照「我訊息」公式化解危機：</p>
+                        <div class="flex flex-col gap-3">
+                            <div class="flex items-center gap-2">
+                                <span class="font-black text-gray-700 whitespace-nowrap bg-white px-3 py-1 rounded-lg shadow-sm border border-gray-100">當</span>
+                                <input type="text" id="input-1-1" class="form-input" placeholder="客觀事實 (例：我在夜市等你一小時)">
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="font-black text-gray-700 whitespace-nowrap bg-white px-3 py-1 rounded-lg shadow-sm border border-gray-100">我覺得</span>
+                                <input type="text" id="input-1-2" class="form-input" placeholder="真實感受 (例：著急、不開心)">
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="font-black text-gray-700 whitespace-nowrap bg-white px-3 py-1 rounded-lg shadow-sm border border-gray-100">我希望</span>
+                                <input type="text" id="input-1-3" class="form-input" placeholder="具體期待 (例：遲到能先講)">
+                            </div>
+                        </div>
+                        <p id="error-1" class="text-red-500 text-sm font-bold mt-3 text-center hidden"><i class="fa-solid fa-triangle-exclamation"></i> 請把三個格子都填寫完整喔！</p>
+                    </div>
+                    <button class="w-full bg-green-500 hover:bg-green-600 text-white font-black text-xl py-4 rounded-xl shadow-lg transition transform hover:-translate-y-1 mt-4" onclick="submitForm(1)">
+                        送出心聲 <i class="fa-solid fa-paper-plane ml-1"></i>
+                    </button>
+                </div>
+
+                <!-- 結果與解答區 -->
+                <div id="result-container-1" class="mt-4 flex-grow hidden flex-col">
+                    <div class="bg-green-100 p-4 rounded-2xl border-4 border-green-400 mb-4 animate-[popIn_0.5s_ease-out]">
+                        <h4 class="text-green-800 font-black text-lg mb-1"><i class="fa-solid fa-circle-check"></i> 成功發送！</h4>
+                        <p class="text-green-900 font-bold leading-snug">對方意識到自己的不對連忙道歉，雙方能好好繼續接下來的約會！</p>
+                    </div>
+                    
+                    <div class="inner-reveal mt-auto" onclick="this.classList.add('revealed')">
+                        <div class="front py-6 bg-yellow-50 border-yellow-200 text-yellow-700 hover:bg-yellow-100 hover:border-yellow-400">
+                            <i class="fa-solid fa-wand-magic-sparkles mb-2 text-2xl block text-yellow-500"></i> 點擊參考：達人版示範
+                        </div>
+                        <div class="back bubble i-message-bubble">
+                            「當我在夜市等你一小時都沒消息時，<br>
+                            <span class="text-pink-500 font-black">我覺得很著急也不開心</span>，<br>
+                            <span class="text-yellow-600 font-black">我希望你如果遲到能提前跟我說一聲。</span>」
+                        </div>
+                    </div>
+                    
+                    <button class="mt-3 text-gray-400 font-bold hover:text-gray-600 underline text-sm text-center" onclick="resetForm(1)">
+                        <i class="fa-solid fa-rotate-left"></i> 重新填寫
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 關卡 2：已讀不回的焦慮 -->
+    <div class="slide" id="slide-2">
+        <button onclick="goToSlide(0)" class="absolute top-6 right-6 bg-gray-100 hover:bg-gray-200 text-gray-700 px-5 py-2 rounded-full font-bold transition flex items-center shadow-sm z-20">
+            <i class="fa-solid fa-rotate-left mr-2"></i> 選擇其他情境
+        </button>
+
+        <div class="mb-2"><span class="bg-pink-100 text-pink-800 px-3 py-1 rounded-full text-xs font-black tracking-widest">STOP 02</span></div>
+        <h2 class="text-3xl font-bold mb-3 title-font text-gray-800">📱 已讀不回的焦慮</h2>
+        
+        <div class="scenario-box py-3 mb-4">
+            <p class="text-lg font-bold text-gray-700 leading-relaxed">
+                你傳了訊息，看到對方已讀，但過了半天仍沒有回覆。你開始猜想：是不是對方不想理你？
+            </p>
+        </div>
+
+        <div class="action-container">
+            <!-- NG 版 -->
+            <div class="panel ng flex-1">
+                <div class="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-red-500 text-white px-6 py-1.5 rounded-full font-black text-lg shadow-md">NG 版</div>
+                <div class="mt-4 flex-grow flex flex-col justify-center">
+                    <button class="btn-reveal btn-ng py-8" onclick="toggleReveal('reveal-2-ng')"><i class="fa-solid fa-bomb mr-2"></i> 點擊查看 NG 爆走反應</button>
+                    <div id="reveal-2-ng" class="reveal-content mt-2">
+                        <div class="bubble text-lg">「已讀不回是怎樣？不想理我是不是？那以後都不要聊啦！」</div>
+                        <div class="mb-4">
+                            <span class="inline-block bg-red-100 text-red-700 font-bold px-4 py-2 rounded-xl border border-red-200 shadow-sm">💥 結局：對方覺得你控制欲太強，故意繼續已讀到底。</span>
+                        </div>
+                        <div class="inner-reveal mt-auto" onclick="this.classList.add('revealed')">
+                            <div class="front py-6"><i class="fa-solid fa-magnifying-glass mb-2 text-2xl block text-purple-400"></i> 點擊揭曉：冰山下的真心</div>
+                            <div class="back iceberg-truth">其實是：害怕被忽略、覺得不安</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 達人版互動表單 -->
+            <div class="panel ok flex-1">
+                <div class="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-6 py-1.5 rounded-full font-black text-lg shadow-md">實戰演練區</div>
+                
+                <div id="form-container-2" class="mt-4 flex-grow flex flex-col">
+                    <div class="bg-gray-50 p-4 rounded-2xl border border-gray-200 flex-grow flex flex-col justify-center">
+                        <p class="font-bold text-gray-600 mb-3 text-center">💡 請依照「我訊息」公式化解危機：</p>
+                        <div class="flex flex-col gap-3">
+                            <div class="flex items-center gap-2">
+                                <span class="font-black text-gray-700 whitespace-nowrap bg-white px-3 py-1 rounded-lg shadow-sm border border-gray-100">當</span>
+                                <input type="text" id="input-2-1" class="form-input" placeholder="客觀事實 (例：看到訊息已讀半天沒回)">
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="font-black text-gray-700 whitespace-nowrap bg-white px-3 py-1 rounded-lg shadow-sm border border-gray-100">我覺得</span>
+                                <input type="text" id="input-2-2" class="form-input" placeholder="真實感受 (例：有點焦慮不安)">
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="font-black text-gray-700 whitespace-nowrap bg-white px-3 py-1 rounded-lg shadow-sm border border-gray-100">我希望</span>
+                                <input type="text" id="input-2-3" class="form-input" placeholder="具體期待 (例：知道你是否在忙)">
+                            </div>
+                        </div>
+                        <p id="error-2" class="text-red-500 text-sm font-bold mt-3 text-center hidden"><i class="fa-solid fa-triangle-exclamation"></i> 請把三個格子都填寫完整喔！</p>
+                    </div>
+                    <button class="w-full bg-green-500 hover:bg-green-600 text-white font-black text-xl py-4 rounded-xl shadow-lg transition transform hover:-translate-y-1 mt-4" onclick="submitForm(2)">
+                        送出心聲 <i class="fa-solid fa-paper-plane ml-1"></i>
+                    </button>
+                </div>
+
+                <div id="result-container-2" class="mt-4 flex-grow hidden flex-col">
+                    <div class="bg-green-100 p-4 rounded-2xl border-4 border-green-400 mb-4 animate-[popIn_0.5s_ease-out]">
+                        <h4 class="text-green-800 font-black text-lg mb-1"><i class="fa-solid fa-circle-check"></i> 成功發送！</h4>
+                        <p class="text-green-900 font-bold leading-snug">對方意識到讓你想太多了，解釋剛好在忙，並安撫你的不安！</p>
+                    </div>
+                    
+                    <div class="inner-reveal mt-auto" onclick="this.classList.add('revealed')">
+                        <div class="front py-6 bg-yellow-50 border-yellow-200 text-yellow-700 hover:bg-yellow-100 hover:border-yellow-400">
+                            <i class="fa-solid fa-wand-magic-sparkles mb-2 text-2xl block text-yellow-500"></i> 點擊參考：達人版示範
+                        </div>
+                        <div class="back bubble i-message-bubble">
+                            「當我看到訊息被已讀卻半天沒回覆時，<br>
+                            <span class="text-pink-500 font-black">我覺得有點焦慮不安</span>，<br>
+                            <span class="text-yellow-600 font-black">我希望能知道你是不是在忙或者不想聊天。</span>」
+                        </div>
+                    </div>
+                    
+                    <button class="mt-3 text-gray-400 font-bold hover:text-gray-600 underline text-sm text-center" onclick="resetForm(2)">
+                        <i class="fa-solid fa-rotate-left"></i> 重新填寫
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 關卡 3：被遺忘的小紀念日 -->
+    <div class="slide" id="slide-3">
+        <button onclick="goToSlide(0)" class="absolute top-6 right-6 bg-gray-100 hover:bg-gray-200 text-gray-700 px-5 py-2 rounded-full font-bold transition flex items-center shadow-sm z-20">
+            <i class="fa-solid fa-rotate-left mr-2"></i> 選擇其他情境
+        </button>
+
+        <div class="mb-2"><span class="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-xs font-black tracking-widest">STOP 03</span></div>
+        <h2 class="text-3xl font-bold mb-3 title-font text-gray-800">📅 被遺忘的小紀念日</h2>
+        
+        <div class="scenario-box py-3 mb-4">
+            <p class="text-lg font-bold text-gray-700 leading-relaxed">
+                今天是你們在一起一個月紀念日。你滿心期待，但對方完全忘記，還先答應和朋友去打球。
+            </p>
+        </div>
+
+        <div class="action-container">
+            <div class="panel ng flex-1">
+                <div class="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-red-500 text-white px-6 py-1.5 rounded-full font-black text-lg shadow-md">NG 版</div>
+                <div class="mt-4 flex-grow flex flex-col justify-center">
+                    <button class="btn-reveal btn-ng py-8" onclick="toggleReveal('reveal-3-ng')"><i class="fa-solid fa-bomb mr-2"></i> 點擊查看 NG 爆走反應</button>
+                    <div id="reveal-3-ng" class="reveal-content mt-2">
+                        <div class="bubble text-lg">「你到底有沒有把我放在心上？紀念日都可以忘記去打球，球比我還重要嗎！」</div>
+                        <div class="mb-4">
+                            <span class="inline-block bg-red-100 text-red-700 font-bold px-4 py-2 rounded-xl border border-red-200 shadow-sm">💥 結局：變成互相比重要性，對方覺得你無理取鬧。</span>
+                        </div>
+                        <div class="inner-reveal mt-auto" onclick="this.classList.add('revealed')">
+                            <div class="front py-6"><i class="fa-solid fa-magnifying-glass mb-2 text-2xl block text-purple-400"></i> 點擊揭曉：冰山下的真心</div>
+                            <div class="back iceberg-truth">其實是：期待落空、覺得自己不重要</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel ok flex-1">
+                <div class="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-6 py-1.5 rounded-full font-black text-lg shadow-md">實戰演練區</div>
+                
+                <div id="form-container-3" class="mt-4 flex-grow flex flex-col">
+                    <div class="bg-gray-50 p-4 rounded-2xl border border-gray-200 flex-grow flex flex-col justify-center">
+                        <p class="font-bold text-gray-600 mb-3 text-center">💡 請依照「我訊息」公式化解危機：</p>
+                        <div class="flex flex-col gap-3">
+                            <div class="flex items-center gap-2">
+                                <span class="font-black text-gray-700 whitespace-nowrap bg-white px-3 py-1 rounded-lg shadow-sm border border-gray-100">當</span>
+                                <input type="text" id="input-3-1" class="form-input" placeholder="客觀事實 (例：知道你忘記紀念日去打球)">
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="font-black text-gray-700 whitespace-nowrap bg-white px-3 py-1 rounded-lg shadow-sm border border-gray-100">我覺得</span>
+                                <input type="text" id="input-3-2" class="form-input" placeholder="真實感受 (例：很失落難過)">
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="font-black text-gray-700 whitespace-nowrap bg-white px-3 py-1 rounded-lg shadow-sm border border-gray-100">我希望</span>
+                                <input type="text" id="input-3-3" class="form-input" placeholder="具體期待 (例：特別的日子能一起過)">
+                            </div>
+                        </div>
+                        <p id="error-3" class="text-red-500 text-sm font-bold mt-3 text-center hidden"><i class="fa-solid fa-triangle-exclamation"></i> 請把三個格子都填寫完整喔！</p>
+                    </div>
+                    <button class="w-full bg-green-500 hover:bg-green-600 text-white font-black text-xl py-4 rounded-xl shadow-lg transition transform hover:-translate-y-1 mt-4" onclick="submitForm(3)">
+                        送出心聲 <i class="fa-solid fa-paper-plane ml-1"></i>
+                    </button>
+                </div>
+
+                <div id="result-container-3" class="mt-4 flex-grow hidden flex-col">
+                    <div class="bg-green-100 p-4 rounded-2xl border-4 border-green-400 mb-4 animate-[popIn_0.5s_ease-out]">
+                        <h4 class="text-green-800 font-black text-lg mb-1"><i class="fa-solid fa-circle-check"></i> 成功發送！</h4>
+                        <p class="text-green-900 font-bold leading-snug">對方發現自己的疏忽，真誠道歉並立刻提議補償的約會計畫！</p>
+                    </div>
+                    
+                    <div class="inner-reveal mt-auto" onclick="this.classList.add('revealed')">
+                        <div class="front py-6 bg-yellow-50 border-yellow-200 text-yellow-700 hover:bg-yellow-100 hover:border-yellow-400">
+                            <i class="fa-solid fa-wand-magic-sparkles mb-2 text-2xl block text-yellow-500"></i> 點擊參考：達人版示範
+                        </div>
+                        <div class="back bubble i-message-bubble">
+                            「當我知道你忘記紀念日還答應去打球時，<br>
+                            <span class="text-pink-500 font-black">我覺得很失落也很難過</span>，<br>
+                            <span class="text-yellow-600 font-black">我希望這個特別的日子能和你一起過。</span>」
+                        </div>
+                    </div>
+                    
+                    <button class="mt-3 text-gray-400 font-bold hover:text-gray-600 underline text-sm text-center" onclick="resetForm(3)">
+                        <i class="fa-solid fa-rotate-left"></i> 重新填寫
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 關卡 4：聚會中的吃醋與不安 -->
+    <div class="slide" id="slide-4">
+        <button onclick="goToSlide(0)" class="absolute top-6 right-6 bg-gray-100 hover:bg-gray-200 text-gray-700 px-5 py-2 rounded-full font-bold transition flex items-center shadow-sm z-20">
+            <i class="fa-solid fa-rotate-left mr-2"></i> 選擇其他情境
+        </button>
+
+        <div class="mb-2"><span class="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-xs font-black tracking-widest">STOP 04</span></div>
+        <h2 class="text-3xl font-bold mb-3 title-font text-gray-800">😠 聚會中的吃醋與不安</h2>
+        
+        <div class="scenario-box py-3 mb-4">
+            <p class="text-lg font-bold text-gray-700 leading-relaxed">
+                朋友聚會時，另一半一直和別人聊得很開心。你覺得自己被冷落，心裡很不舒服。
+            </p>
+        </div>
+
+        <div class="action-container">
+            <div class="panel ng flex-1">
+                <div class="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-red-500 text-white px-6 py-1.5 rounded-full font-black text-lg shadow-md">NG 版</div>
+                <div class="mt-4 flex-grow flex flex-col justify-center">
+                    <button class="btn-reveal btn-ng py-8" onclick="toggleReveal('reveal-4-ng')"><i class="fa-solid fa-bomb mr-2"></i> 點擊查看 NG 爆走反應</button>
+                    <div id="reveal-4-ng" class="reveal-content mt-2">
+                        <div class="bubble text-lg">「你跟別人聊得那麼開心，那你去找他在一起啊，帶我來幹嘛？當空氣嗎？」</div>
+                        <div class="mb-4">
+                            <span class="inline-block bg-red-100 text-red-700 font-bold px-4 py-2 rounded-xl border border-red-200 shadow-sm">💥 結局：場面變得很尷尬，對方覺得你讓他很沒面子。</span>
+                        </div>
+                        <div class="inner-reveal mt-auto" onclick="this.classList.add('revealed')">
+                            <div class="front py-6"><i class="fa-solid fa-magnifying-glass mb-2 text-2xl block text-purple-400"></i> 點擊揭曉：冰山下的真心</div>
+                            <div class="back iceberg-truth">其實是：覺得吃醋、害怕失去關注</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel ok flex-1">
+                <div class="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-6 py-1.5 rounded-full font-black text-lg shadow-md">實戰演練區</div>
+                
+                <div id="form-container-4" class="mt-4 flex-grow flex flex-col">
+                    <div class="bg-gray-50 p-4 rounded-2xl border border-gray-200 flex-grow flex flex-col justify-center">
+                        <p class="font-bold text-gray-600 mb-3 text-center">💡 請依照「我訊息」公式化解危機：</p>
+                        <div class="flex flex-col gap-3">
+                            <div class="flex items-center gap-2">
+                                <span class="font-black text-gray-700 whitespace-nowrap bg-white px-3 py-1 rounded-lg shadow-sm border border-gray-100">當</span>
+                                <input type="text" id="input-4-1" class="form-input" placeholder="客觀事實 (例：看到你一直跟別人聊天)">
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="font-black text-gray-700 whitespace-nowrap bg-white px-3 py-1 rounded-lg shadow-sm border border-gray-100">我覺得</span>
+                                <input type="text" id="input-4-2" class="form-input" placeholder="真實感受 (例：被冷落和吃醋)">
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="font-black text-gray-700 whitespace-nowrap bg-white px-3 py-1 rounded-lg shadow-sm border border-gray-100">我希望</span>
+                                <input type="text" id="input-4-3" class="form-input" placeholder="具體期待 (例：能跟我多一點互動)">
+                            </div>
+                        </div>
+                        <p id="error-4" class="text-red-500 text-sm font-bold mt-3 text-center hidden"><i class="fa-solid fa-triangle-exclamation"></i> 請把三個格子都填寫完整喔！</p>
+                    </div>
+                    <button class="w-full bg-green-500 hover:bg-green-600 text-white font-black text-xl py-4 rounded-xl shadow-lg transition transform hover:-translate-y-1 mt-4" onclick="submitForm(4)">
+                        送出心聲 <i class="fa-solid fa-paper-plane ml-1"></i>
+                    </button>
+                </div>
+
+                <div id="result-container-4" class="mt-4 flex-grow hidden flex-col">
+                    <div class="bg-green-100 p-4 rounded-2xl border-4 border-green-400 mb-4 animate-[popIn_0.5s_ease-out]">
+                        <h4 class="text-green-800 font-black text-lg mb-1"><i class="fa-solid fa-circle-check"></i> 成功發送！</h4>
+                        <p class="text-green-900 font-bold leading-snug">對方懂了你的感受，馬上拉著你一起加入話題，照顧你的心情！</p>
+                    </div>
+                    
+                    <div class="inner-reveal mt-auto" onclick="this.classList.add('revealed')">
+                        <div class="front py-6 bg-yellow-50 border-yellow-200 text-yellow-700 hover:bg-yellow-100 hover:border-yellow-400">
+                            <i class="fa-solid fa-wand-magic-sparkles mb-2 text-2xl block text-yellow-500"></i> 點擊參考：達人版示範
+                        </div>
+                        <div class="back bubble i-message-bubble">
+                            「當在聚會上看到你一直跟別人聊天時，<br>
+                            <span class="text-pink-500 font-black">我覺得有點被冷落和吃醋</span>，<br>
+                            <span class="text-yellow-600 font-black">我希望能跟你也有多一點互動。</span>」
+                        </div>
+                    </div>
+                    
+                    <button class="mt-3 text-gray-400 font-bold hover:text-gray-600 underline text-sm text-center" onclick="resetForm(4)">
+                        <i class="fa-solid fa-rotate-left"></i> 重新填寫
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 關卡 5：交織的網路線 -->
+    <div class="slide" id="slide-5">
+        <button onclick="goToSlide(0)" class="absolute top-6 right-6 bg-gray-100 hover:bg-gray-200 text-gray-700 px-5 py-2 rounded-full font-bold transition flex items-center shadow-sm z-20">
+            <i class="fa-solid fa-rotate-left mr-2"></i> 選擇其他情境
+        </button>
+
+        <div class="mb-2"><span class="bg-teal-100 text-teal-800 px-3 py-1 rounded-full text-xs font-black tracking-widest">STOP 05</span></div>
+        <h2 class="text-3xl font-bold mb-3 title-font text-gray-800">🌐 交織的網路線</h2>
+        
+        <div class="scenario-box py-3 mb-4">
+            <p class="text-lg font-bold text-gray-700 leading-relaxed">
+                你看到另一半在 threads 上和別人聊得很開心，卻對自己的發文很冷淡。
+            </p>
+        </div>
+
+        <div class="action-container">
+            <div class="panel ng flex-1">
+                <div class="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-red-500 text-white px-6 py-1.5 rounded-full font-black text-lg shadow-md">NG 版</div>
+                <div class="mt-4 flex-grow flex flex-col justify-center">
+                    <button class="btn-reveal btn-ng py-8" onclick="toggleReveal('reveal-5-ng')"><i class="fa-solid fa-bomb mr-2"></i> 點擊查看 NG 爆走反應</button>
+                    <div id="reveal-5-ng" class="reveal-content mt-2">
+                        <div class="bubble text-lg">「你對別人的貼文就那麼熱情，對我的就隨便敷衍，你在 threads 上找備胎喔？」</div>
+                        <div class="mb-4">
+                            <span class="inline-block bg-red-100 text-red-700 font-bold px-4 py-2 rounded-xl border border-red-200 shadow-sm">💥 結局：對方覺得你無中生有、查勤管太多，大吵一架。</span>
+                        </div>
+                        <div class="inner-reveal mt-auto" onclick="this.classList.add('revealed')">
+                            <div class="front py-6"><i class="fa-solid fa-magnifying-glass mb-2 text-2xl block text-purple-400"></i> 點擊揭曉：冰山下的真心</div>
+                            <div class="back iceberg-truth">其實是：覺得不平衡、想要被在乎</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel ok flex-1">
+                <div class="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-6 py-1.5 rounded-full font-black text-lg shadow-md">實戰演練區</div>
+                
+                <div id="form-container-5" class="mt-4 flex-grow flex flex-col">
+                    <div class="bg-gray-50 p-4 rounded-2xl border border-gray-200 flex-grow flex flex-col justify-center">
+                        <p class="font-bold text-gray-600 mb-3 text-center">💡 請依照「我訊息」公式化解危機：</p>
+                        <div class="flex flex-col gap-3">
+                            <div class="flex items-center gap-2">
+                                <span class="font-black text-gray-700 whitespace-nowrap bg-white px-3 py-1 rounded-lg shadow-sm border border-gray-100">當</span>
+                                <input type="text" id="input-5-1" class="form-input" placeholder="客觀事實 (例：你在網路上熱情回別人對我冷淡)">
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="font-black text-gray-700 whitespace-nowrap bg-white px-3 py-1 rounded-lg shadow-sm border border-gray-100">我覺得</span>
+                                <input type="text" id="input-5-2" class="form-input" placeholder="真實感受 (例：心裡不太平衡)">
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="font-black text-gray-700 whitespace-nowrap bg-white px-3 py-1 rounded-lg shadow-sm border border-gray-100">我希望</span>
+                                <input type="text" id="input-5-3" class="form-input" placeholder="具體期待 (例：能多關注和回應我)">
+                            </div>
+                        </div>
+                        <p id="error-5" class="text-red-500 text-sm font-bold mt-3 text-center hidden"><i class="fa-solid fa-triangle-exclamation"></i> 請把三個格子都填寫完整喔！</p>
+                    </div>
+                    <button class="w-full bg-green-500 hover:bg-green-600 text-white font-black text-xl py-4 rounded-xl shadow-lg transition transform hover:-translate-y-1 mt-4" onclick="submitForm(5)">
+                        送出心聲 <i class="fa-solid fa-paper-plane ml-1"></i>
+                    </button>
+                </div>
+
+                <div id="result-container-5" class="mt-4 flex-grow hidden flex-col">
+                    <div class="bg-green-100 p-4 rounded-2xl border-4 border-green-400 mb-4 animate-[popIn_0.5s_ease-out]">
+                        <h4 class="text-green-800 font-black text-lg mb-1"><i class="fa-solid fa-circle-check"></i> 成功發送！</h4>
+                        <p class="text-green-900 font-bold leading-snug">對方察覺到自己的差別待遇，說明原因並承諾會多留意對你的態度！</p>
+                    </div>
+                    
+                    <div class="inner-reveal mt-auto" onclick="this.classList.add('revealed')">
+                        <div class="front py-6 bg-yellow-50 border-yellow-200 text-yellow-700 hover:bg-yellow-100 hover:border-yellow-400">
+                            <i class="fa-solid fa-wand-magic-sparkles mb-2 text-2xl block text-yellow-500"></i> 點擊參考：達人版示範
+                        </div>
+                        <div class="back bubble i-message-bubble">
+                            「當我看到你在網路上熱情回別人卻對我很冷淡時，<br>
+                            <span class="text-pink-500 font-black">我覺得心裡不太平衡</span>，<br>
+                            <span class="text-yellow-600 font-black">我希望你也能多關注和回應我。</span>」
+                        </div>
+                    </div>
+                    
+                    <button class="mt-3 text-gray-400 font-bold hover:text-gray-600 underline text-sm text-center" onclick="resetForm(5)">
+                        <i class="fa-solid fa-rotate-left"></i> 重新填寫
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 結語寶物頁：目前不自動跳轉，可由下方導覽列進入 -->
+    <div class="slide" id="slide-6">
+        <button onclick="goToSlide(0)" class="absolute top-6 right-6 bg-gray-100 hover:bg-gray-200 text-gray-700 px-5 py-2 rounded-full font-bold transition flex items-center shadow-sm">
+            <i class="fa-solid fa-rotate-left mr-2"></i> 返回主選單
+        </button>
+        <div class="flex flex-col items-center justify-center h-full text-center">
+            <div class="text-7xl mb-4 text-yellow-400">🏆</div>
+            <h2 class="text-5xl font-black title-font mb-6 text-gray-800">恭喜！解鎖溝通寶物</h2>
+            
+            <div class="bg-white p-8 rounded-3xl w-full max-w-3xl shadow-[0_10px_40px_rgba(0,0,0,0.08)] border-2 border-gray-100">
+                <p class="text-2xl font-bold text-gray-700 mb-6">下次想爆炸罵人時，請先深呼吸 3 秒，拿出這個公式：</p>
+                
+                <div class="flex flex-col gap-4 text-left">
+                    <div class="bg-blue-50 p-5 rounded-2xl flex items-center gap-5 border border-blue-100 transition hover:shadow-md">
+                        <div class="text-4xl bg-white w-14 h-14 rounded-full flex shrink-0 items-center justify-center shadow text-blue-500">👀</div>
+                        <div>
+                            <div class="text-xl font-black text-blue-700 mb-1">當我看到 / 聽到... (客觀事實)</div>
+                            <div class="font-bold text-blue-900/60">冷靜說出事實，不要加上個人批評或猜測</div>
+                        </div>
+                    </div>
+                    <div class="bg-pink-50 p-5 rounded-2xl flex items-center gap-5 border border-pink-100 transition hover:shadow-md">
+                        <div class="text-4xl bg-white w-14 h-14 rounded-full flex shrink-0 items-center justify-center shadow text-pink-500">❤️</div>
+                        <div>
+                            <div class="text-xl font-black text-pink-600 mb-1">我覺得... (真實感受)</div>
+                            <div class="font-bold text-pink-900/60">誠實說出冰山底下的真心感覺，如難過、害怕</div>
+                        </div>
+                    </div>
+                    <div class="bg-yellow-50 p-5 rounded-2xl flex items-center gap-5 border border-yellow-100 transition hover:shadow-md">
+                        <div class="text-4xl bg-white w-14 h-14 rounded-full flex shrink-0 items-center justify-center shadow text-yellow-500">🤲</div>
+                        <div>
+                            <div class="text-xl font-black text-yellow-700 mb-1">因為我希望... (具體期待)</div>
+                            <div class="font-bold text-yellow-900/60">告訴對方可以怎麼做來幫助你，避免對方猜不透</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- 底部導航圓點 -->
+<div class="controls">
+    <div class="progress-dots flex gap-3 items-center" id="dotsContainer"></div>
+</div>
+
+<script>
+    let currentSlide = 0;
+    const slides = document.querySelectorAll('.slide');
+    const dotsContainer = document.getElementById('dotsContainer');
+
+    // 翻牌特效
+    function flipCard(element) {
+        element.classList.toggle('flipped');
+    }
+
+    // 初始化進度點
+    slides.forEach((_, index) => {
+        const dot = document.createElement('div');
+        dot.classList.add('dot');
+        // 最後一頁(結語)換個顏色區分
+        if(index === slides.length - 1) {
+            dot.style.backgroundColor = '#FFD700'; // 金色
+            dot.title = "溝通寶物總結";
+        }
+        if (index === 0) dot.classList.add('active');
+        dot.onclick = () => goToSlide(index);
+        dotsContainer.appendChild(dot);
+    });
+    
+    const dots = document.querySelectorAll('.dot');
+
+    function updateNav() {
+        dots.forEach((dot, index) => {
+            dot.classList.toggle('active', index === currentSlide);
+        });
+    }
+
+    function goToSlide(index) {
+        slides[currentSlide].classList.remove('active');
+        currentSlide = index;
+        slides[currentSlide].classList.add('active');
+        updateNav();
+    }
+
+    function toggleReveal(id) {
+        const element = document.getElementById(id);
+        const button = element.previousElementSibling;
+        if (element.classList.contains('show')) {
+            element.classList.remove('show');
+            button.style.display = 'block';
+        } else {
+            element.classList.add('show');
+            button.style.display = 'none';
+        }
+    }
+
+    // 互動表單送出邏輯
+    function submitForm(id) {
+        const input1 = document.getElementById(`input-${id}-1`).value.trim();
+        const input2 = document.getElementById(`input-${id}-2`).value.trim();
+        const input3 = document.getElementById(`input-${id}-3`).value.trim();
+        const errorMsg = document.getElementById(`error-${id}`);
+        
+        // 檢查是否三個欄位都有填寫
+        if (!input1 || !input2 || !input3) {
+            errorMsg.classList.remove('hidden');
+            errorMsg.classList.add('animate-pulse');
+            setTimeout(() => errorMsg.classList.remove('animate-pulse'), 1000);
+            return;
+        }
+        
+        // 通過檢查，隱藏表單，顯示結果
+        errorMsg.classList.add('hidden');
+        document.getElementById(`form-container-${id}`).classList.add('hidden');
+        document.getElementById(`form-container-${id}`).classList.remove('flex');
+        
+        document.getElementById(`result-container-${id}`).classList.remove('hidden');
+        document.getElementById(`result-container-${id}`).classList.add('flex');
+    }
+
+    // 重新填寫表單邏輯
+    function resetForm(id) {
+        // 清空輸入
+        document.getElementById(`input-${id}-1`).value = '';
+        document.getElementById(`input-${id}-2`).value = '';
+        document.getElementById(`input-${id}-3`).value = '';
+        
+        // 切換顯示狀態
+        document.getElementById(`form-container-${id}`).classList.remove('hidden');
+        document.getElementById(`form-container-${id}`).classList.add('flex');
+        
+        document.getElementById(`result-container-${id}`).classList.add('hidden');
+        document.getElementById(`result-container-${id}`).classList.remove('flex');
+        
+        // 將達人版示範蓋回去
+        const expertReveal = document.querySelector(`#result-container-${id} .inner-reveal`);
+        if(expertReveal) {
+            expertReveal.classList.remove('revealed');
+        }
+    }
+</script>
+
+</body>
+</html>
